@@ -15,7 +15,7 @@ dir.create(dir_output)
 nm <- "kc-ili"
 
 # Import data files
-ess_data <- readRDS("data/1-source/essence_ili_by_patient_zip.rds")
+ess_data <- readRDS("data/2-final/tutorial-6/ili_pat.rds")
 kc_zctas <- readRDS("data/1-source/kc_zctas.rds")
 
 # Case file: <location ID> <# cases> <date/time> <attribute>
@@ -112,16 +112,25 @@ ss.options(list(
   # Temporal output
   OutputTemporalGraphHTML = "y",
   TemporalGraphReportType = 2, # report only significant clusters
-  TemporalGraphSignificanceCutoff = 0.01, # cluster p-value cutoff for reporting
+  TemporalGraphSignificanceCutoff = 1, # cluster p-value cutoff for reporting
+                                       # tutorial uses 0.01, but this results in
+                                       # an error when running `satscan()`
 
-  # # Other output # THESE PARAMS NOT AVAILABLE IN PKG OR APP OPTS
+  # Other output
+  # PARAMS NOT AVAILABLE
   # ClusterSignificanceByRecurrence = "y",
   # ClusterSignificanceRecurrenceCutoff = 100,
   # ClusterSignificanceRecurrenceCutoffType = 3,
   # ClusterSignificanceByPvalue = "n",
   # ClusterSignificancePvalueCutoff, = 0.05
 
-  # Line list options in tutorial 6 params file not present in rsatscan or app
+  # Line list
+  # PARAMS NOT AVAILABLE
+  # LineListCaseFile = "n",
+  # LineListHeaderCaseFile = "n",
+  # LineListEventCache = "...\input files\event_cache.txt",
+  # EventGroupKML = "y",
+  # EventGroupByKML = "disease_status_final",
 
   # Run Options
   LogRunToHistoryFile = "n"
@@ -146,8 +155,4 @@ writeLines(ssresults$main, paste0(dir_output, nm, ".txt"))
 
 # Save results
 saveRDS(ssresults, paste0(dir_input, gsub("-", "_", nm), ".rds"))
-
-
-
-
 

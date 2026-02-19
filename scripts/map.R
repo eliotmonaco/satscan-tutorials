@@ -32,7 +32,3 @@ ggplot() +
   geom_sf(data = nybc$cluster7_locations) #+
   # geom_sf(data = nybc$locations_outside_clusters)
 
-
-
-
-

@@ -75,8 +75,11 @@ build_ess_url <- function(
   start, # start date (YYYY-MM-DD)
   end = Sys.Date(), # end date (YYYY-MM-DD)
   data_source = c("hospital", "patient"), # Data by hospital or patient location
-  output = c("ts", "dd"), # ts = time series, dd = data details
-  fields = NULL # if output is "dd", add desired fields here as character vector
+  output = c("dd", "tb", "ts"), # dd = data details, tb = table builder, ts = time series
+  dd_fields = NULL, # if output is "dd", add desired fields here as character vector,
+  tb_col = NULL,
+  tb_rows = NULL,
+  zipcodes = FALSE
 ) {
   start <- as.Date(start); end <- as.Date(end)
 
@@ -89,29 +92,47 @@ build_ess_url <- function(
   output <- match.arg(output)
 
   # Output parameters
-  if (output == "ts") {
-    op <- "timeSeries?"
-
-    params_out <- "aqtTarget=TimeSeries"
-  } else if (output == "dd") {
-    if (is.null(fields)) {
-      stop("When `output` is \"dd\", `fields` cannot be empty")
+  if (output == "dd") {
+    if (is.null(dd_fields)) {
+      stop("When `output` is \"dd\", `dd_fields` cannot be empty")
     }
 
     op <- "dataDetails/csv?"
 
-    fields <- paste0("field=", c(fields, "EssenceID", "C_BioSense_ID"))
+    dd_fields <- paste0("field=", c(dd_fields, "EssenceID"))
 
     params_out <- paste(
-      c("aqtTarget=DataDetails", fields),
+      c("aqtTarget=DataDetails", dd_fields),
       collapse = "&"
     )
+  } else if (output == "tb") {
+    op <- "tableBuilder/csv?"
+
+    if (length("tb_col") > 1) {
+      stop("`tb_col` must have length of 1")
+    }
+
+    if (is.null(tb_col) || is.null(tb_rows)) {
+      stop("When `output` is \"tb\", `tb_col` and `tb_rows` cannot be empty")
+    }
+
+    params_out <- paste(
+      "aqtTarget=TableBuilder",
+      paste0("columnField=", tb_col),
+      paste(paste0("rowFields=", tb_rows), collapse = "&"),
+      sep = "&"
+    )
+  } else if (output == "ts") {
+    op <- "timeSeries?"
+
+    params_out <- "aqtTarget=TimeSeries"
   }
 
-  # Data source parameters
+  # Data source & geography parameters
   if (data_source == "hospital") {
-    params_ds <- paste(
-      "datasource=va_hosp",
+    params_ds <- "datasource=va_hosp"
+
+    params_geo <- paste(
       "geographySystem=hospital",
       "geography=mochildrensmercyercc",
       "geography=mochildrensmercynorthlandercc",
@@ -124,12 +145,27 @@ build_ess_url <- function(
       sep = "&"
     )
   } else if (data_source == "patient") {
-    params_ds <- paste(
-      "datasource=va_er",
+    params_ds <- "datasource=va_er"
+
+    params_geo <- paste(
       "geographySystem=region",
       "geography=mo_clay",
       "geography=mo_jackson",
       "geography=mo_platte",
+      sep = "&"
+    )
+  }
+
+  # ZIP code free text
+  if (zipcodes) {
+    params_geo <- paste(
+      "geographySystem=zipcode",
+      paste0(
+        "geography=",
+        paste(sort(unique(unlist(
+          kcData::geoids$zcta
+        ))), collapse = ",")
+      ),
       sep = "&"
     )
   }
@@ -148,6 +184,7 @@ build_ess_url <- function(
   params <- paste(
     params_out,
     params_ds,
+    params_geo,
     params_add,
     sep = "&"
   )
